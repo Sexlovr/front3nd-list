@@ -12,7 +12,7 @@ echo "Running npm init to initialize data..."
 npm run init || true
 
 echo "Writing definitive config.yaml..."
-cat << "EOF" > config.yaml
+cat << EOF > config.yaml
 dataRoot: ./data
 listen: true
 listenAddress:
@@ -31,6 +31,9 @@ whitelist:
   - 127.0.0.1
 whitelistDockerHosts: true
 basicAuthMode: true
+basicAuthUser:
+  username: "${SPACE_USERNAME:-admin}"
+  password: "${SPACE_SECRET:-admin}"
 hostWhitelist:
   enabled: false
   scan: false
@@ -49,14 +52,6 @@ performance:
   lazyLoadCharacters: true
   memoryCacheCapacity: 100mb
 EOF
-
-echo "Applying Space secrets..."
-if [ -n "$SPACE_SECRET" ]; then
-    export SILLYTAVERN_BASICAUTHPASS="$SPACE_SECRET"
-else
-    export SILLYTAVERN_BASICAUTHPASS="admin"
-fi
-export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"
 
 echo "Starting SillyTavern..."
 exec node server.js
