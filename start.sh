@@ -8,8 +8,20 @@ if [ -d "/data" ]; then
     export SILLYTAVERN_DATAROOT=/data
 fi
 
-echo "Running npm init to initialize data..."
-npm run init || true
+echo "Checking if data needs initialization..."
+if [ -d "${SILLYTAVERN_DATAROOT:-./data}" ]; then
+    INIT_MARKER="${SILLYTAVERN_DATAROOT:-./data}/.npm-init-done"
+else
+    INIT_MARKER="./data/.npm-init-done"
+fi
+
+if [ ! -f "$INIT_MARKER" ]; then
+    echo "Running npm run init to initialize data for the first time..."
+    npm run init || true
+    touch "$INIT_MARKER"
+else
+    echo "Skipping npm run init (already initialized). Fast booting!"
+fi
 
 echo "Writing definitive config.yaml..."
 cat << EOF > config.yaml
