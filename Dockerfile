@@ -6,6 +6,7 @@ EXPOSE 7860
 # Create a startup script to handle config generation and execution
 RUN printf '%s\n' \
 '#!/bin/bash' \
+'cd /home/node/app' \
 'if [ -d "/data" ]; then' \
 '    export SILLYTAVERN_DATAROOT=/data' \
 'fi' \
@@ -58,7 +59,7 @@ RUN printf '%s\n' \
 'export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"' \
 'echo "Starting SillyTavern..."' \
 'exec node server.js' \
-> start.sh && chmod +x start.sh
+> /start.sh && chmod +x /start.sh
 
-# Execute the startup script (use ENTRYPOINT to override base image's default entrypoint)
-ENTRYPOINT ["./start.sh"]
+# Execute the startup script with an absolute path
+ENTRYPOINT ["/start.sh"]
