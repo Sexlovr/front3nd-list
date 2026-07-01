@@ -2,6 +2,8 @@ FROM ghcr.io/sillytavern/sillytavern:latest
 
 # Expose the standard Hugging Face Space port
 EXPOSE 7860
+ENV SILLYTAVERN_PORT=7860
+ENV SILLYTAVERN_LISTENADDRESS_IPV4=0.0.0.0
 
 # Add our config patch script into the container during build
 # This mirrors the python patch script from ai-hub-frontend-test
@@ -16,6 +18,8 @@ RUN printf '%s\n' \
 '  else t+="\n"+k+": "+v+"\n";' \
 '}' \
 's("listen","true");' \
+'s("port","7860");' \
+'s("listenAddressIPv4","0.0.0.0");' \
 's("whitelistMode","false");' \
 's("enableForwardedWhitelist","false");' \
 's("securityOverride","true");' \
