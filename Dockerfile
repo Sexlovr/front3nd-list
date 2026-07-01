@@ -1,33 +1,23 @@
-FROM node:20-slim
+FROM ghcr.io/sillytavern/sillytavern:latest
 
-# Install git and other essential tools
-RUN apt-get update && apt-get install -y git build-essential python3 && rm -rf /var/lib/apt/lists/*
-
-# Set up user for Hugging Face Spaces (user 1000)
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
-
-# Set working directory
-WORKDIR $HOME/app
-
-# Define repository and branch to clone
-ARG REPO_URL="https://github.com/SillyTavern/SillyTavern.git"
-ARG BRANCH="release"
-
-# Clone the specified repository and branch
-RUN git clone -b ${BRANCH} ${REPO_URL} .
-
-# Install dependencies
-RUN npm install
-
-# Copy our start script
-COPY --chown=user start.sh $HOME/app/start.sh
-RUN chmod +x $HOME/app/start.sh
-
-# Expose HF default port
+# Expose the standard Hugging Face Space port
 EXPOSE 7860
 
-# Start the application
-CMD ["./start.sh"]
+# Default environment variables for Hugging Face
+ENV SILLYTAVERN_PORT=7860
+ENV SILLYTAVERN_LISTEN=true
+
+# Start via shell to handle dynamic Space Lock and persistent storage
+CMD sh -c '\
+    if [ -d "/data" ]; then \
+        echo "Persistent storage found at /data. Setting SILLYTAVERN_DATAROOT..."; \
+        export SILLYTAVERN_DATAROOT=/data; \
+    fi; \
+    if [ -n "$SPACE_SECRET" ]; then \
+        echo "SPACE_SECRET found, enabling basic authentication (space lock)."; \
+        export SILLYTAVERN_BASICAUTHMODE=true; \
+        export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"; \
+        export SILLYTAVERN_BASICAUTHPASS="$SPACE_SECRET"; \
+    fi; \
+    node server.js \
+'
