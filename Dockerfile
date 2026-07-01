@@ -10,7 +10,6 @@ ENV SILLYTAVERN_LISTENADDRESS_IPV4=0.0.0.0
 RUN printf '%s\n' \
 'const fs=require("fs");' \
 'let c="config.yaml";' \
-'if(!fs.existsSync(c)) fs.copyFileSync("default.yaml",c);' \
 'let t=fs.readFileSync(c,"utf8");' \
 'function s(k,v) {' \
 '  let r=new RegExp("^"+k+":.*$","m");' \
@@ -40,8 +39,10 @@ CMD sh -c '\
     if [ -d "/data" ]; then \
         export SILLYTAVERN_DATAROOT=/data; \
     fi; \
+    echo "Running npm init to generate config.yaml..."; \
+    npm run init || true; \
     echo "Patching config.yaml (hub frontend way)..."; \
-    node patch.js; \
+    node patch.js || true; \
     export SILLYTAVERN_BASICAUTHMODE=true; \
     export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"; \
     if [ -n "$SPACE_SECRET" ]; then \
