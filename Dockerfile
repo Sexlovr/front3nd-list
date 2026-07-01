@@ -12,6 +12,9 @@ ENV SILLYTAVERN_WHITELISTMODE=false
 ENV SILLYTAVERN_ENABLEFORWARDEDWHITELIST=false
 ENV SILLYTAVERN_HOSTWHITELIST_ENABLED=false
 
+# Bypass the "insecure configuration" startup crash when Basic Auth is missing
+ENV SILLYTAVERN_SECURITYOVERRIDE=true
+
 # Start via shell to handle dynamic Space Lock and persistent storage
 CMD sh -c '\
     if [ -d "/data" ]; then \
