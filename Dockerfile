@@ -60,5 +60,5 @@ RUN printf '%s\n' \
 'exec node server.js' \
 > start.sh && chmod +x start.sh
 
-# Execute the startup script
-CMD ["./start.sh"]
+# Execute the startup script (use ENTRYPOINT to override base image's default entrypoint)
+ENTRYPOINT ["./start.sh"]
