@@ -7,6 +7,11 @@ EXPOSE 7860
 ENV SILLYTAVERN_PORT=7860
 ENV SILLYTAVERN_LISTEN=true
 
+# Disable whitelist to allow external connections on Hugging Face
+ENV SILLYTAVERN_WHITELISTMODE=false
+ENV SILLYTAVERN_ENABLEFORWARDEDWHITELIST=false
+ENV SILLYTAVERN_HOSTWHITELIST_ENABLED=false
+
 # Start via shell to handle dynamic Space Lock and persistent storage
 CMD sh -c '\
     if [ -d "/data" ]; then \
