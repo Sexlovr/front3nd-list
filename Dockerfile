@@ -3,13 +3,8 @@ FROM ghcr.io/sillytavern/sillytavern:latest
 # Expose the standard Hugging Face Space port
 EXPOSE 7860
 
-# Default environment variables
-ENV SILLYTAVERN_PORT=7860
-ENV SILLYTAVERN_LISTEN=true
-
 # Add our config patch script into the container during build
-# This dynamically rewrites config.yaml to forcefully disable the host whitelist
-# just like the frontend hub does, ensuring HF Spaces proxies aren't blocked.
+# This mirrors the python patch script from ai-hub-frontend-test
 RUN printf '%s\n' \
 'const fs=require("fs");' \
 'let c="config.yaml";' \
@@ -39,20 +34,21 @@ RUN printf '%s\n' \
 # Start via shell to handle dynamic Space Lock and persistent storage
 CMD sh -c '\
     if [ -d "/data" ]; then \
-        echo "Persistent storage found at /data. Setting SILLYTAVERN_DATAROOT..."; \
         export SILLYTAVERN_DATAROOT=/data; \
     fi; \
-    echo "Patching config.yaml to disable host whitelisting..."; \
+    echo "Patching config.yaml (hub frontend way)..."; \
     node patch.js; \
-    echo "Enabling basic authentication to satisfy SillyTavern security requirements."; \
     export SILLYTAVERN_BASICAUTHMODE=true; \
     export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"; \
     if [ -n "$SPACE_SECRET" ]; then \
-        echo "Using provided SPACE_SECRET for password."; \
         export SILLYTAVERN_BASICAUTHPASS="$SPACE_SECRET"; \
     else \
-        echo "WARNING: SPACE_SECRET is missing! Using default password: admin"; \
         export SILLYTAVERN_BASICAUTHPASS="admin"; \
     fi; \
+    echo "Starting SillyTavern..."; \
     node server.js \
+        --listen \
+        --port 7860 \
+        --disableCsrf \
+        --whitelist=false \
 '
