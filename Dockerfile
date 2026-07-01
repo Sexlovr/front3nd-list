@@ -8,6 +8,10 @@ RUN apk add --no-cache git \
 # Hugging Face explicitly flags and bans images with SillyTavern's default layers/labels.
 FROM node:24-bookworm-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Expose the standard Hugging Face Space port
 EXPOSE 7860
 
