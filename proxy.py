@@ -10,6 +10,7 @@ HUB_PORT = 7860
 
 class ThreadPoolHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
+    request_queue_size = 512
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
