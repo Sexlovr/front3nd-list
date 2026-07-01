@@ -33,7 +33,7 @@ listenAddress:
 protocol:
   ipv4: true
   ipv6: false
-port: 7860
+port: 8000
 browserLaunch:
   enabled: false
 whitelistMode: false
@@ -65,5 +65,8 @@ performance:
   memoryCacheCapacity: 100mb
 EOF
 
-echo "Starting SillyTavern..."
-exec node server.js
+echo "Starting SillyTavern on port 8000 in the background..."
+node server.js &
+
+echo "Starting Python WebSocket Proxy on port 7860..."
+exec python3 /start-proxy.py

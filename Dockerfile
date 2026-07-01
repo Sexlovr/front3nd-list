@@ -16,6 +16,7 @@ COPY --from=sillytavern --chown=node:node /home/node/app /home/node/app
 
 # Copy our custom startup script directly from the cloned repository
 COPY --from=repo /repo/start.sh /start.sh
+COPY --from=repo /repo/proxy.py /start-proxy.py
 RUN chmod +x /start.sh
 
 # Run as non-root node user (required by Hugging Face)
