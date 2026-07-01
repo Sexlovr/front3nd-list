@@ -12,8 +12,12 @@ ENV HOME=/home/user \
 # Set working directory
 WORKDIR $HOME/app
 
-# Clone the real SillyTavern repository
-RUN git clone https://github.com/SillyTavern/SillyTavern.git .
+# Define repository and branch to clone
+ARG REPO_URL="https://github.com/SillyTavern/SillyTavern.git"
+ARG BRANCH="release"
+
+# Clone the specified repository and branch
+RUN git clone -b ${BRANCH} ${REPO_URL} .
 
 # Install dependencies
 RUN npm install
