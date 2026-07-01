@@ -18,11 +18,15 @@ CMD sh -c '\
         echo "Persistent storage found at /data. Setting SILLYTAVERN_DATAROOT..."; \
         export SILLYTAVERN_DATAROOT=/data; \
     fi; \
+    echo "Enabling basic authentication to satisfy SillyTavern security requirements."; \
+    export SILLYTAVERN_BASICAUTHMODE=true; \
+    export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"; \
     if [ -n "$SPACE_SECRET" ]; then \
-        echo "SPACE_SECRET found, enabling basic authentication (space lock)."; \
-        export SILLYTAVERN_BASICAUTHMODE=true; \
-        export SILLYTAVERN_BASICAUTHUSER="${SPACE_USERNAME:-admin}"; \
+        echo "Using provided SPACE_SECRET for password."; \
         export SILLYTAVERN_BASICAUTHPASS="$SPACE_SECRET"; \
+    else \
+        echo "WARNING: SPACE_SECRET is missing! Using default password: admin"; \
+        export SILLYTAVERN_BASICAUTHPASS="admin"; \
     fi; \
     node server.js \
 '
