@@ -19,7 +19,7 @@ RUN apk add --no-cache git \
 FROM node:24-bookworm-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 \
+ && apt-get install -y --no-install-recommends nginx \
  && rm -rf /var/lib/apt/lists/*
 
 # Relocate the app to a NEUTRAL path (not the upstream default signature)
@@ -32,8 +32,8 @@ RUN sed -i -E 's/("name"[[:space:]]*:[[:space:]]*)"[^"]*"/\1"webui"/I' /opt/webu
     done 2>/dev/null || true
 
 # Runtime scripts
-COPY --from=repo --chown=node:node /repo/start.sh  /opt/webui/start.sh
-COPY --from=repo --chown=node:node /repo/proxy.py  /opt/webui/proxy.py
+COPY --from=repo --chown=node:node /repo/start.sh   /opt/webui/start.sh
+COPY --from=repo --chown=node:node /repo/nginx.conf /opt/webui/nginx.conf
 RUN chmod +x /opt/webui/start.sh
 
 EXPOSE 7860

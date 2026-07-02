@@ -88,5 +88,8 @@ node server.js \
   --disableCsrf \
   --whitelist=false &
 
-echo "[start] launching proxy on :7860"
-exec python3 "$APP_DIR/proxy.py"
+# nginx reverse proxy on :7860 — gzip + keepalive + websocket + streaming.
+# Temp dirs under /tmp because we run as the non-root node user.
+mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
+echo "[start] launching frontend proxy on :7860 (nginx)"
+exec /usr/sbin/nginx -c "$APP_DIR/nginx.conf" -g 'daemon off;'
