@@ -14,6 +14,9 @@ class ThreadPoolHTTPServer(ThreadingMixIn, HTTPServer):
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    # Neutral server identity (overrides the default Python/BaseHTTP banner)
+    server_version = "nginx"
+    sys_version = ""
 
     def log_message(self, format, *args):
         pass # Suppress logs for performance
@@ -62,8 +65,11 @@ class Handler(BaseHTTPRequestHandler):
             data = resp.read()
             
             self.send_response(resp.status)
+            # Drop hop-by-hop headers AND any that fingerprint the backend
+            drop = ("connection", "keep-alive", "transfer-encoding",
+                    "server", "x-powered-by")
             for key, value in resp.getheaders():
-                if key.lower() not in ("connection", "keep-alive", "transfer-encoding"):
+                if key.lower() not in drop:
                     self.send_header(key, value)
             self.end_headers()
             self.wfile.write(data)
@@ -85,6 +91,6 @@ class Handler(BaseHTTPRequestHandler):
             pass
 
 if __name__ == "__main__":
-    print(f"Starting Python WebSocket Proxy on port {HUB_PORT}, forwarding to SillyTavern on {ST_PORT}...", flush=True)
+    print(f"[proxy] listening on :{HUB_PORT} -> backend :{ST_PORT}", flush=True)
     server = ThreadPoolHTTPServer(("0.0.0.0", HUB_PORT), Handler)
     server.serve_forever()

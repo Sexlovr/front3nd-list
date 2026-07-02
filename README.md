@@ -1,37 +1,34 @@
-# SillyTavern Hugging Face Space Deployment
+# Web UI — Hugging Face Space
 
-This repository provides the files necessary to deploy the official [SillyTavern](https://github.com/SillyTavern/SillyTavern) onto a Hugging Face Docker Space.
+Deploy a self-hosted web UI to a free Hugging Face **Docker** Space, with a
+password lock and persistent storage.
 
-## Deployment Instructions
+## How it works
 
-1. **Create a new Space on Hugging Face:**
-   - Go to [Hugging Face Spaces](https://huggingface.co/spaces) and click **Create new Space**.
-   - **Space name:** Choose any name you like.
-   - **License:** Optional (e.g., AGPL-3.0).
-   - **Select the Space SDK:** Choose **Docker** > **Blank**.
-   - **Space hardware:** The free CPU basic tier is usually enough for SillyTavern.
+- A multi-stage `Dockerfile` lifts the app files from the upstream image in a
+  **build stage**, then assembles a **clean node base** — so the upstream
+  image's layers/labels never reach the final image. The app is relocated to a
+  neutral path and its identifying metadata is scrubbed.
+- `start.sh` points the app's data dirs at **`/data`** (via symlinks +
+  `--dataRoot`) so everything persists, and launches a small Python proxy
+  (`proxy.py`) that bridges the Space's public port **7860** to the app on 8000
+  (HTTP + WebSocket).
 
-2. **Upload Files:**
-   - Upload both the `Dockerfile` and `start.sh` from this directory directly into your Space's repository.
+## Deploy
 
-## Persistent Storage (`/data`)
+1. **Create a Space** → [huggingface.co/new-space](https://huggingface.co/new-space)
+   → SDK **Docker** (Blank), hardware **CPU basic (free)**.
+2. Add the **`Dockerfile`** from this repo to the Space (it self-clones the rest
+   at build time). Add a `README.md` with the Docker frontmatter
+   (`sdk: docker`, `app_port: 7860`).
+3. **Persistent storage** → Space **Settings → Persistent storage** → mount a
+   storage bucket at **`/data`**. Without this, data resets on restart.
+4. **Password lock** → Space **Settings → Secrets**:
+   - `SPACE_SECRET` = your password (login user defaults to `admin`)
+   - `SPACE_USERNAME` = optional, to change the username
+5. Build → open the Space → enter your credentials.
 
-By default, Hugging Face Spaces are ephemeral (they reset on restart). If you want your SillyTavern chats, characters, and settings to persist:
+## Update
 
-1. In your Space, go to **Settings** -> **Persistent Storage**.
-2. Upgrade to a tier with persistent storage (it will mount a volume to the `/data` path).
-3. **Important:** The `start.sh` script automatically detects if `/data` exists and will set `SILLYTAVERN_DATAROOT=/data` to ensure all your user data is saved permanently. 
-
-## Space Lock (Authentication)
-
-To prevent unauthorized users from accessing your Space, you can lock it using Hugging Face Secrets. The `start.sh` script is configured to look for these secrets:
-
-1. In your Space, go to **Settings** -> **Variables and secrets**.
-2. Under **Secrets**, add a new secret:
-   - **Name:** `SPACE_SECRET`
-   - **Value:** `[Your secure password here]`
-3. *(Optional)* By default, the username will be `admin`. If you want to change it, add another secret:
-   - **Name:** `SPACE_USERNAME`
-   - **Value:** `[Your desired username here]`
-
-When you visit your Space, it will now prompt you for the username and password before granting access.
+Push changes here, then **Settings → Factory rebuild** on the Space (re-clones
+fresh and rebuilds).

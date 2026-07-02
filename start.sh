@@ -1,30 +1,44 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# Web UI launcher — persists user data to /data, serves through a proxy on 7860.
+set -uo pipefail
 
-# Change to the application directory
-cd /home/node/app
+APP_DIR=/opt/webui
+cd "$APP_DIR"
 
-# If data is mounted externally, set the correct root
-if [ -d "/data" ]; then
-    export SILLYTAVERN_DATAROOT=/data
+# ---------------------------------------------------------------------------
+# Persistent storage: use the mounted bucket at /data when present, else fall
+# back to ephemeral local storage so the container still boots.
+# ---------------------------------------------------------------------------
+DATA_ROOT=/data
+if [ ! -d "$DATA_ROOT" ] || [ ! -w "$DATA_ROOT" ]; then
+  DATA_ROOT="$APP_DIR/.localdata"
+  echo "[start] WARNING: /data is not a writable mount — using ephemeral $DATA_ROOT."
+  echo "[start]          Mount a storage bucket at /data (Settings → Persistent storage) to keep data."
 fi
+export DATA_ROOT
 
-echo "Checking if data needs initialization..."
-if [ -d "${SILLYTAVERN_DATAROOT:-./data}" ]; then
-    INIT_MARKER="${SILLYTAVERN_DATAROOT:-./data}/.npm-init-done"
-else
-    INIT_MARKER="./data/.npm-init-done"
-fi
+CONFIG="$DATA_ROOT/config/config.yaml"
+INIT_MARKER="$DATA_ROOT/.init-done"
 
+mkdir -p "$DATA_ROOT/config" "$DATA_ROOT/data/default-user"
+
+# Point the app's working dirs at persistent storage via symlinks
+rm -rf config data config.yaml 2>/dev/null || true
+ln -sfn "$DATA_ROOT/config" config
+ln -sfn "$DATA_ROOT/data"   data
+ln -sfn "$CONFIG"           config.yaml
+
+# First boot only: let the app scaffold its defaults into /data
 if [ ! -f "$INIT_MARKER" ]; then
-    echo "Running npm run init to initialize data for the first time..."
-    npm run init || true
-    touch "$INIT_MARKER"
+  echo "[start] first-time init..."
+  npm run init 2>&1 || true
+  touch "$INIT_MARKER"
 else
-    echo "Skipping npm run init (already initialized). Fast booting!"
+  echo "[start] skipping init (already done) — fast boot."
 fi
 
-echo "Writing definitive config.yaml..."
-cat << EOF > config.yaml
+# Write the definitive config (auth pulled from Space secrets)
+cat > "$CONFIG" <<EOF
 dataRoot: ./data
 listen: true
 listenAddress:
@@ -65,8 +79,14 @@ performance:
   memoryCacheCapacity: 100mb
 EOF
 
-echo "Starting SillyTavern on port 8000 in the background..."
-node server.js &
+echo "[start] launching backend on :8000 (data at $DATA_ROOT)"
+node server.js \
+  --listen \
+  --port 8000 \
+  --configPath "$CONFIG" \
+  --dataRoot "$DATA_ROOT/data" \
+  --disableCsrf \
+  --whitelist=false &
 
-echo "Starting Python WebSocket Proxy on port 7860..."
-exec python3 /start-proxy.py
+echo "[start] launching proxy on :7860"
+exec python3 "$APP_DIR/proxy.py"
